@@ -15,6 +15,8 @@ class State:
 
     mailly: int
     moulin: int
+    unmet_mailly: int = 0
+    unmet_moulin: int = 0
 
 
 def step(
@@ -37,14 +39,21 @@ def step(
         Updated state after one simulation step
 
     Note:
-        - If a station has no bikes available, increment the appropriate unmet demand counter
         - Update the state by moving bikes between stations based on probabilities
+        - If a station has no bikes available, increment the appropriate unmet demand counter
     """
     # TODO: Implement the step logic including unmet tracking
     pass
 
 
-def run_simulation(initial: State, steps: int, p1: float, p2: float, seed: int):
+def run_simulation(
+    initial_mailly: int,
+    initial_moulin: int,
+    steps: int,
+    p1: float,
+    p2: float,
+    seed: int,
+) -> Dict[str, list]:
     """Run a complete bike-sharing simulation with extended metrics.
 
     Args:
@@ -55,14 +64,15 @@ def run_simulation(initial: State, steps: int, p1: float, p2: float, seed: int):
         seed: Random seed for reproducibility
 
     Returns:
-        Tuple containing:
-        - DataFrame with columns ['time', 'mailly', 'moulin'] tracking bike counts over time
-        - Dictionary with metrics including:
+        - Dictionary indexed by step, metrics including:
+            - 'mailly': Number of bikes at Mailly station
+            - 'moulin': Number of bikes at Moulin station
             - 'unmet_mailly': Number of unmet requests at Mailly
             - 'unmet_moulin': Number of unmet requests at Moulin
             - 'final_imbalance': Final difference between station bike counts
 
     Note:
+        - Create the state object with initial bike counts
         - Initialize metrics dictionary with all required counters
         - Record state at each time step for the DataFrame
         - Calculate final imbalance as mailly - moulin

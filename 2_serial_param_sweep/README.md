@@ -10,4 +10,4 @@ python run_serial.py --params params.csv --out-dir results/
 
 Outputs:
 - results/metrics.csv: one row per run
-- results/timeseries.csv: tidy long time series (run_id, time, station, count)
+- results/metrics_3plot.png: Plot of mailly, moulin and balance for each simulation

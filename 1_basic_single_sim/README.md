@@ -7,7 +7,7 @@ Run:
 ```bash
 python main.py \
   --steps 10000 --p1 0.5 --p2 0.47 \
-  --init-mailly 10 --init-moulin 2 \
+  --init-mailly 10 --init-moulin 5 \
   --seed 123 \
   --out-csv results.csv --plot
 ```

@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import concurrent.futures as cf
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -7,14 +8,14 @@ from model import State, run_simulation
 
 
 def parse_args():
-    """Parse command line arguments for serial parameter sweep.
+    """Parse command line arguments for parallel parameter sweep.
 
     Returns:
         Parsed arguments containing:
         - params: Path to CSV file with parameter combinations
         - out_dir: Output directory for results
+        - workers: Number of worker processes ('auto' for automatic detection)
         - plot: Boolean flag to generate plots after run
-        - smooth_window: Window size for smoothing timeseries (default: 1, no smoothing)
 
     Note:
         Use argparse.ArgumentParser to define all required and optional arguments
@@ -24,22 +25,23 @@ def parse_args():
 
 
 def main():
-    """Main function to run serial parameter sweep.
+    """Main function to run parallel parameter sweep using threading.
 
     This function should:
     1. Parse command line arguments
     2. Read parameter combinations from CSV file
-    3. Run simulations serially for each parameter combination
-    4. Collect and aggregate results
-    5. Save aggregated results to CSV files
-    6. Optionally generate plots
+    3. Set up parallel processing with appropriate number of workers
+    4. Submit simulation jobs to worker processes
+    5. Collect results as they complete
+    6. Aggregate and save results
+    7. Optionally generate plots
 
     Expected parameter CSV columns:
-    - init_mailly: Initial bikes at Mailly
-    - init_moulin: Initial bikes at Moulin
     - steps: Number of simulation steps
     - p1: Probability Mailly->Moulin
     - p2: Probability Moulin->Mailly
+    - init_mailly: Initial bikes at Mailly
+    - init_moulin: Initial bikes at Moulin
     - seed: Random seed
 
     Output files:
@@ -47,12 +49,8 @@ def main():
     - Optional plots: PNG files for timeseries and metrics visualization
 
     Note:
-        - Process each row in the parameters file as a separate simulation run
-        - Add run_id to track individual simulations
-        - **OPTIONAL**: plot timeseries for both stations
-        - **OPTIONAL**: Handle smoothing for timeseries plots if requested
+        - Use the threading module for parallel processing
     """
-    # TODO: Implement serial parameter sweep workflow
     pass
 
 

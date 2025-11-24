@@ -1,0 +1,4 @@
+__pycache__
+results/
+velo_env.sif
+.devcontainer/devcontainer.json
