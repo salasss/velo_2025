@@ -43,7 +43,28 @@ def step(
         - Update the state by moving bikes between stations based on probabilities
     """
     # User tries to go from mailly -> moulin with prob p1
-    pass
+    #mailly -> moulin
+    randomp1 = rng.random()
+    if randomp1<p1:
+        if(state.mailly):
+            state.mailly-=1
+            state.moulin+=1
+        else:
+            state.unmet_mailly+=1
+            metrics['unmet_mailly']+=1
+    #mailly <- moulin
+    randomp2 = rng.random()
+    if randomp2<p2:
+        if(state.moulin):
+            state.moulin-=1
+            state.mailly+=1
+        else:
+            state.unmet_moulin+=1
+            metrics['unmet_moulin']+=1
+    return state
+        
+        
+        
 
 
 def run_simulation(
@@ -80,4 +101,23 @@ def run_simulation(
         - Record state at each time step for the DataFrame
         - Calculate final imbalance as mailly - moulin
     """
-    pass
+    state = State(mailly=initial_mailly,moulin=initial_moulin)
+    rng = np.random.default_rng(seed)
+    metrics = {'unmet_mailly':0,'unmet_moulin':0}
+    times = []
+    mailly_counts = []
+    moulin_counts = []
+    for i in range(steps):
+        times.append(i)
+        mailly_counts.append(state.mailly)
+        moulin_counts.append(state.moulin)
+        step(state,p1,p2,rng,metrics)
+    results = pd.DataFrame({
+        'time':times,
+        'mailly': mailly_counts,
+        'moulin' :moulin_counts
+        })
+    metrics['mailly']=state.mailly
+    metrics['moulin']=state.moulin
+    metrics['final_imbalance']=state.mailly -state.moulin
+    return (results,metrics)
