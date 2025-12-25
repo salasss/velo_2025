@@ -29,7 +29,7 @@ def parse_args():
     my_args.add_argument('--plot',action='store_true',help='Boolean flag to generate plot')
     return my_args.parse_args()
     
-thread_lock = threading.Lock()
+lock = threading.Lock()
 def thread_work(task_queue, results_list):
     """this func execute the simulation in a thread"""
     while True:
@@ -55,7 +55,7 @@ def thread_work(task_queue, results_list):
                 'unmet_moulin':res["unmet_moulin"][-1],
                 'ambulance':res["final_imbalance"][-1] 
             }
-            with thread_lock:
+            with lock:
                 results_list.append(row_result)
         except Exception as e:
             print("error")
@@ -120,6 +120,7 @@ def main():
     df_results = df_results.sort_values('run_id')
     csv_path = output_dir / "metrics.csv"
     df_results.to_csv(csv_path, index=False)
+    print(f"test--threads--Done! {len(df_results)} simulations run.")
     
 
 
