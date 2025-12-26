@@ -19,9 +19,12 @@ def parse_args():
     Note:
         Use argparse.ArgumentParser to define all required and optional arguments
     """
-    # TODO: Implement argument parsing
-    pass
-
+    my_args = argparse.ArgumentParser(description="Parse command line arguments for running one simulation from parameter file")
+    my_args.add_argument('--params',type=str,required=True, help='Path to CSV file with parameter combinations (default: params.csv)')
+    my_args.add_argument('--row-index',type=int, required=True, help=' Index of the row to execute from the parameters file')
+    my_args.add_argument('--out-dir',type=str,default='results', help=' Output directory for results')
+    my_args.add_argument('--base-seed',type=int,default=0,help='Base seed to use if row doesn\'t have seed column (default: 0)')
+    return my_args.parse_args()
 
 def main():
     """Main function to run a single simulation specified by row index.
@@ -53,8 +56,39 @@ def main():
         - Handle missing seed column gracefully
         - Save metadata as JSON with all parameters including final seed used
     """
-    # TODO: Implement single simulation workflow for cluster execution
-    pass
+    args = parse_args()
+    try:
+        csv_all = pd.read_csv(args.params)
+        row = csv_all.iloc[args.row_index]
+    except IndexError:
+        print(f"Erreur")
+        return
+    
+    if 'seed' in row: seed = int(row['seed'])
+    else: seed = args.base_seed + args.row_index
+    
+    initial_state = State(
+        mailly=int(row['init_mailly']),
+        moulin=int(row['init_moulin'])
+    )
+    df_results, metrics = run_simulation(initial=initial_state,steps=int(row['steps']),p1=row['p1'],p2=row['p2'],seed=seed)
+    csv_path = Path(args.out_dir) / str(args.row_index)
+    csv_path.mkdir(parents=True, exist_ok=True)
+    df_results.to_csv(csv_path / "timeseries.csv", index=False)
+    
+    pd.DataFrame([metrics]).to_csv(csv_path / "metrics.csv", index=False)
+    
+    metadata = row.to_dict()
+    metadata['used_seed'] = seed
+    
+    with open(csv_path / "metadata.json", "w") as f:
+        json.dump(metadata, f, indent=4)
+        
+    print(f"test--runoneSlurm--Done! {len(df_results)} simulations run.")
+        
+    
+    
+    
 
 
 if __name__ == "__main__":
