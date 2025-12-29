@@ -7,6 +7,47 @@ import matplotlib.pyplot as plt
 from model import State, run_simulation
 
 import queue
+import numpy as np
+
+
+def plot_results(results_list, output_dir, smooth_window=1):
+    """Simple plotting function for results"""
+    if not results_list:
+        return
+    
+    # Plot the first result as example
+    res = results_list[0]
+    
+    # Smoothing function
+    def smooth(data, window):
+        if window <= 1:
+            return data
+        return np.convolve(data, np.ones(window)/window, mode='valid')
+    
+    plt.figure(figsize=(12, 6))
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(smooth(res['mailly'], smooth_window), label='Mailly', color='blue')
+    plt.plot(smooth(res['moulin'], smooth_window), label='Moulin', color='green')
+    plt.title('Bikes at Stations')
+    plt.xlabel('Time')
+    plt.ylabel('Number of Bikes')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(smooth(res['unmet_mailly'], smooth_window), label='Unmet Mailly', color='red')
+    plt.plot(smooth(res['unmet_moulin'], smooth_window), label='Unmet Moulin', color='orange')
+    plt.title('Unmet Demand')
+    plt.xlabel('Time')
+    plt.ylabel('Unmet Demand')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(output_dir / "plot.png", dpi=100)
+    plt.close()
+    print(f"Plot saved to: {output_dir / 'plot.png'}")
 
 
 def parse_args():
@@ -121,6 +162,15 @@ def main():
     csv_path = output_dir / "metrics.csv"
     df_results.to_csv(csv_path, index=False)
     print(f"test--threads--Done! {len(df_results)} simulations run.")
+    
+    if args.plot:
+        # Collect raw results for plotting
+        raw_results = []
+        for _, row in df_params.iterrows():
+            res = run_simulation(int(row['init_mailly']), int(row['init_moulin']), 
+                               int(row['steps']), row['p1'], row['p2'], int(row['seed']))
+            raw_results.append(res)
+        plot_results(raw_results, output_dir)
     
 
 
