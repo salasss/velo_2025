@@ -22,25 +22,25 @@ def plot_results(results_list, output_dir, smooth_window=1):
             return data
         return np.convolve(data, np.ones(window)/window, mode='valid')
     
-    plt.figure(figsize=(12, 6))
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
     
-    plt.subplot(1, 2, 1)
-    plt.plot(smooth(res['mailly'], smooth_window), label='Mailly', color='blue')
-    plt.plot(smooth(res['moulin'], smooth_window), label='Moulin', color='green')
-    plt.title('Bikes at Stations')
-    plt.xlabel('Time')
-    plt.ylabel('Number of Bikes')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    # Plot 1: Bikes at stations
+    axes[0].plot(smooth(res['mailly'], smooth_window), label='Mailly', color='blue')
+    axes[0].plot(smooth(res['moulin'], smooth_window), label='Moulin', color='green')
+    axes[0].set_title('Bikes at Stations')
+    axes[0].set_xlabel('Time')
+    axes[0].set_ylabel('Number of Bikes')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
     
-    plt.subplot(1, 2, 2)
-    plt.plot(smooth(res['unmet_mailly'], smooth_window), label='Unmet Mailly', color='red')
-    plt.plot(smooth(res['unmet_moulin'], smooth_window), label='Unmet Moulin', color='orange')
-    plt.title('Unmet Demand')
-    plt.xlabel('Time')
-    plt.ylabel('Unmet Demand')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    # Plot 2: Unmet demand
+    axes[1].plot(smooth(res['unmet_mailly'], smooth_window), label='Unmet Mailly', color='red')
+    axes[1].plot(smooth(res['unmet_moulin'], smooth_window), label='Unmet Moulin', color='orange')
+    axes[1].set_title('Unmet Demand')
+    axes[1].set_xlabel('Time')
+    axes[1].set_ylabel('Unmet Demand')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig(output_dir / "plot.png", dpi=100)
