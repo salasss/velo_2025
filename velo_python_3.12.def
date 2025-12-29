@@ -1,0 +1,40 @@
+Bootstrap: docker
+From: python:3.12-slim
+
+%labels
+    Author salasAlkama
+    Version 1.0
+    Description Image Singularity simulation velo 
+
+%files
+    requirements.txt /opt/requirements.txt
+    
+    
+    1_basic_single_sim /app/1_basic_single_sim
+    2_serial_param_sweep /app/2_serial_param_sweep
+    3_parallel_local /app/3_parallel_local
+    4_cluster_slurm /app/4_cluster_slurm
+
+%post
+    # I(MPI + compilateur)
+    apt-get update && apt-get install -y gcc libopenmpi-dev openmpi-bin
+    
+    pip install --upgrade pip
+    
+    pip install -r /opt/requirements.txt
+    
+    echo 'export PYTHONPATH=/app:$PYTHONPATH' >> $SINGULARITY_ENVIRONMENT
+
+%environment
+    export LC_ALL=C
+    export PYTHONPATH=/app:$PYTHONPATH
+
+%runscript
+    exec python "$@"
+
+%help
+    Image projet Velo 2025.
+    
+    Exemples :
+    singularity exec velo.sif python /app/3_parallel_local/run_mpi.py ...
+    mpirun -n 4 singularity exec velo.sif python /app/3_parallel_local/run_mpi.py ...
