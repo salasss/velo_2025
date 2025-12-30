@@ -43,7 +43,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_1_run_basic(self):
         """Vérifie que le script 1_basic tourne"""
-        self.run_script('1_basic_single_sim/run_basic.py')
+        self.run_script('1_basic_single_sim/run_single.py')
 
     def test_2_run_serial(self):
         """Vérifie que le script 2_serial tourne"""
