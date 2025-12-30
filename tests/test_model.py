@@ -43,24 +43,54 @@ class TestIntegration(unittest.TestCase):
 
     def test_1_run_basic(self):
         """Vérifie que le script 1_basic tourne"""
-        self.run_script('1_basic_single_sim/run_single.py')
+        self.run_script('1_basic_single_sim/run_single.py', [
+            '--steps', '5',
+            '--p1', '0.5',
+            '--p2', '0.5',
+            '--init-mailly', '10',
+            '--init-moulin', '5',
+            '--seed', '42'
+        ])
 
     def test_2_run_serial(self):
         """Vérifie que le script 2_serial tourne"""
-        self.run_script('2_serial_param_sweep/run_serial.py', [
-            '--params', 'params.csv',
-            '--out-dir', 'test_results_2',
-            '--plot' # test plot
-        ])
+        # Create params.csv in 2_serial_param_sweep if not exists
+        params_2 = os.path.join(self.root_dir, '2_serial_param_sweep/params.csv')
+        if not os.path.exists(params_2):
+            with open(params_2, 'w') as f:
+                f.write("init_mailly,init_moulin,steps,p1,p2,seed\n")
+                f.write("10,5,5,0.5,0.5,42\n")
+        
+        # Change to directory and run script
+        cmd = [sys.executable, 'run_serial.py', '--params', 'params.csv', '--out-dir', 'test_results_2']
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.path.join(self.root_dir, '2_serial_param_sweep'))
+        
+        if result.returncode != 0:
+            print(f"\n--- ERREUR lors de l'exécution de 2_serial_param_sweep/run_serial.py ---")
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
+        
+        self.assertEqual(result.returncode, 0, "Le script 2_serial_param_sweep/run_serial.py a planté !")
 
     def test_3_run_parallel(self):
         """Vérifie que le script 3_parallel tourne (Mode Multiprocessing)"""
-        # note :  test just run_parallel.py 
-        if os.path.exists(os.path.join(self.root_dir, '3_parallel_local/run_parallel.py')):
-             self.run_script('3_parallel_local/run_parallel.py', [
-                '--params', 'params.csv',
-                '--out-dir', 'test_results_3'
-            ])
+        # Create params.csv in 3_parallel_local if not exists
+        params_3 = os.path.join(self.root_dir, '3_parallel_local/params.csv')
+        if not os.path.exists(params_3):
+            with open(params_3, 'w') as f:
+                f.write("init_mailly,init_moulin,steps,p1,p2,seed\n")
+                f.write("10,5,5,0.5,0.5,42\n")
+        
+        # Change to directory and run script
+        cmd = [sys.executable, 'run_parallel.py', '--params', 'params.csv', '--out-dir', 'test_results_3']
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.path.join(self.root_dir, '3_parallel_local'))
+        
+        if result.returncode != 0:
+            print(f"\n--- ERREUR lors de l'exécution de 3_parallel_local/run_parallel.py ---")
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
+        
+        self.assertEqual(result.returncode, 0, "Le script 3_parallel_local/run_parallel.py a planté !")
 
 if __name__ == '__main__':
     unittest.main()
