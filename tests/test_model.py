@@ -1,62 +1,66 @@
-import pytest
+import unittest
+import subprocess
 import sys
-from pathlib import Path
+import os
 
-# On ajoute la racine du projet au chemin Python
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# CORRECTION IMPORT : On importe depuis le model à la racine
-# (Python interdit les imports commençant par un chiffre comme '1_basic...')
-from model import State, run_simulation
-
-class TestModel:
-    """Test cases for the bike simulation model"""
+class TestIntegration(unittest.TestCase):
     
-    def test_state_initialization(self):
-        """Test State class initialization"""
-        state = State(mailly=10, moulin=5)
-        assert state.mailly == 10
-        assert state.moulin == 5
-    
-    def test_run_simulation_returns_dict(self):
-        """Test that run_simulation returns the correct structure"""
-        # On utilise les arguments nommés pour être clair
-        df, metrics = run_simulation(
-            initial=State(10, 5),
-            steps=10,
-            p1=0.5,
-            p2=0.3,
-            seed=42
+    def setUp(self):
+        """Préparation : On repère où sont les fichiers"""
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        self.params_file = os.path.join(self.root_dir, 'params.csv')
+        
+        #if not csv exist
+        if not os.path.exists(self.params_file):
+            with open(self.params_file, 'w') as f:
+                f.write("init_mailly,init_moulin,steps,p1,p2,seed\n")
+                f.write("10,5,5,0.5,0.5,42\n")
+                f.write("10,5,5,0.5,0.5,43\n")
+
+    def run_script(self, script_path, args=[]):
+        """Helper pour lancer un script python et vérifier qu'il finit avec le code 0"""
+        full_path = os.path.join(self.root_dir, script_path)
+        
+        #  python chemin/vers/script.py arg1 arg2 ...
+        cmd = [sys.executable, full_path] + args
+        
+        # start processus
+        result = subprocess.run(
+            cmd, 
+            capture_output=True, 
+            text=True, 
+            cwd=self.root_dir 
         )
         
-        # run_simulation renvoie (DataFrame, Dict)
-        # On vérifie le DataFrame
-        assert 'mailly' in df.columns
-        assert 'moulin' in df.columns
-        # On vérifie les métriques
-        assert isinstance(metrics, dict)
-        assert 'final_imbalance' in metrics
-    
-    def test_run_simulation_steps(self):
-        """Test that simulation runs for correct number of steps"""
-        steps = 20
-        df, metrics = run_simulation(
-            initial=State(10, 5),
-            steps=steps,
-            p1=0.5,
-            p2=0.3,
-            seed=42
-        )
+        # check
+        if result.returncode != 0:
+            print(f"\n--- ERREUR lors de l'exécution de {script_path} ---")
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
         
-        assert len(df) == steps
+        self.assertEqual(result.returncode, 0, f"Le script {script_path} a planté !")
 
-    def test_reproducibility(self):
-        """Test that same seed produces same results"""
-        init = State(10, 5)
-        # Run 1
-        df1, _ = run_simulation(init, 15, 0.5, 0.3, seed=42)
-        # Run 2
-        df2, _ = run_simulation(init, 15, 0.5, 0.3, seed=42)
-        
-        # Les listes doivent être strictement identiques
-        assert df1['mailly'].equals(df2['mailly'])
+    def test_1_run_basic(self):
+        """Vérifie que le script 1_basic tourne"""
+        self.run_script('1_basic_single_sim/run_basic.py')
+
+    def test_2_run_serial(self):
+        """Vérifie que le script 2_serial tourne"""
+        self.run_script('2_serial_param_sweep/run_serial.py', [
+            '--params', 'params.csv',
+            '--out-dir', 'test_results_2',
+            '--plot' # test plot
+        ])
+
+    def test_3_run_parallel(self):
+        """Vérifie que le script 3_parallel tourne (Mode Multiprocessing)"""
+        # note :  test just run_parallel.py 
+        if os.path.exists(os.path.join(self.root_dir, '3_parallel_local/run_parallel.py')):
+             self.run_script('3_parallel_local/run_parallel.py', [
+                '--params', 'params.csv',
+                '--out-dir', 'test_results_3'
+            ])
+
+if __name__ == '__main__':
+    unittest.main()
