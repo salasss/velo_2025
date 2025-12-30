@@ -2,11 +2,12 @@ import pytest
 import sys
 from pathlib import Path
 
-# Add project root to path
+# On ajoute la racine du projet au chemin Python
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from 1_basic_single_sim.model import State, run_simulation
-
+# CORRECTION IMPORT : On importe depuis le model à la racine
+# (Python interdit les imports commençant par un chiffre comme '1_basic...')
+from model import State, run_simulation
 
 class TestModel:
     """Test cases for the bike simulation model"""
@@ -18,43 +19,44 @@ class TestModel:
         assert state.moulin == 5
     
     def test_run_simulation_returns_dict(self):
-        """Test that run_simulation returns a dictionary"""
-        result = run_simulation(
-            init_mailly=10,
-            init_moulin=5,
+        """Test that run_simulation returns the correct structure"""
+        # On utilise les arguments nommés pour être clair
+        df, metrics = run_simulation(
+            initial=State(10, 5),
             steps=10,
             p1=0.5,
             p2=0.3,
             seed=42
         )
         
-        assert isinstance(result, dict)
-        assert 'mailly' in result
-        assert 'moulin' in result
+        # run_simulation renvoie (DataFrame, Dict)
+        # On vérifie le DataFrame
+        assert 'mailly' in df.columns
+        assert 'moulin' in df.columns
+        # On vérifie les métriques
+        assert isinstance(metrics, dict)
+        assert 'final_imbalance' in metrics
     
     def test_run_simulation_steps(self):
         """Test that simulation runs for correct number of steps"""
         steps = 20
-        result = run_simulation(
-            init_mailly=10,
-            init_moulin=5,
+        df, metrics = run_simulation(
+            initial=State(10, 5),
             steps=steps,
             p1=0.5,
             p2=0.3,
             seed=42
         )
         
-        assert len(result['mailly']) == steps
-        assert len(result['moulin']) == steps
-    
-    def test_run_simulation_with_seed_reproducible(self):
+        assert len(df) == steps
+
+    def test_reproducibility(self):
         """Test that same seed produces same results"""
-        result1 = run_simulation(10, 5, 15, 0.5, 0.3, 42)
-        result2 = run_simulation(10, 5, 15, 0.5, 0.3, 42)
+        init = State(10, 5)
+        # Run 1
+        df1, _ = run_simulation(init, 15, 0.5, 0.3, seed=42)
+        # Run 2
+        df2, _ = run_simulation(init, 15, 0.5, 0.3, seed=42)
         
-        assert result1['mailly'] == result2['mailly']
-        assert result1['moulin'] == result2['moulin']
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+        # Les listes doivent être strictement identiques
+        assert df1['mailly'].equals(df2['mailly'])
