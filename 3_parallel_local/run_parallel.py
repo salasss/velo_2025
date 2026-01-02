@@ -5,6 +5,47 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from model import State, run_simulation
+import numpy as np
+
+
+def plot_results(results_list, output_dir, smooth_window=1):
+    """Simple plotting function for results"""
+    if not results_list:
+        return
+    
+    # Plot the first result as example
+    res = results_list[0]
+    
+    # Smoothing function
+    def smooth(data, window):
+        if window <= 1:
+            return data
+        return np.convolve(data, np.ones(window)/window, mode='valid')
+    
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    
+    # Plot 1: Bikes at stations
+    axes[0].plot(smooth(res['mailly'], smooth_window), label='Mailly', color='blue')
+    axes[0].plot(smooth(res['moulin'], smooth_window), label='Moulin', color='green')
+    axes[0].set_title('Bikes at Stations')
+    axes[0].set_xlabel('Time')
+    axes[0].set_ylabel('Number of Bikes')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+    
+    # Plot 2: Unmet demand
+    axes[1].plot(smooth(res['unmet_mailly'], smooth_window), label='Unmet Mailly', color='red')
+    axes[1].plot(smooth(res['unmet_moulin'], smooth_window), label='Unmet Moulin', color='orange')
+    axes[1].set_title('Unmet Demand')
+    axes[1].set_xlabel('Time')
+    axes[1].set_ylabel('Unmet Demand')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(output_dir / "plot.png", dpi=100)
+    plt.close()
+    print(f"Plot saved to: {output_dir / 'plot.png'}")
 
 
 def parse_args():
@@ -20,8 +61,34 @@ def parse_args():
     Note:
         Use argparse.ArgumentParser to define all required and optional arguments
     """
-    # TODO: Implement argument parsing
-    pass
+    my_args = argparse.ArgumentParser(description="parallel parameter sweep usings threads")
+    my_args.add_argument('--params',type=str,required=True, help='Path to CSV file')
+    my_args.add_argument('--out-dir',type=str,default='results', help=' Output directory for results')
+    my_args.add_argument('--workers',type=str,default='4', help=' Number of worker processes (auto: for automatic detection)')
+    my_args.add_argument('--plot',action='store_true',help='Boolean flag to generate plot')
+    return my_args.parse_args()
+
+def multi_work(row):
+    """this func execute the simulation in a parallel"""
+    res = run_simulation(int(row['init_mailly']),int(row['init_moulin']), int(row['steps']), row['p1'], row['p2'], int(row['seed']))
+    return{
+            'run_id': row.get('run_id', 0),
+            #init
+            'init_mailly':row['init_mailly'],
+            'init_moulin':row['init_moulin'],
+            'steps':row['steps'],
+            'p1':row['p1'],
+            'p2':row['p2'],
+            'seed': row['seed'],
+            #final result
+            'final_mailly':res["mailly"][-1],
+            'final_moulin':res["moulin"][-1],
+            'unmet_mailly':res["unmet_mailly"][-1],
+            'unmet_moulin':res["unmet_moulin"][-1],
+            'ambulance':res["final_imbalance"][-1] 
+            }
+        
+        
 
 
 def main():
@@ -51,8 +118,36 @@ def main():
     Note:
         - Use multiprocessing for parallel processing
     """
-    # TODO: Implement parallel parameter sweep workflow
-    pass
+    args = parse_args()
+    df_params = pd.read_csv(args.params)
+    output_dir = Path(args.out_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    df_params['run_id'] = df_params.index
+    
+    tasks = df_params.to_dict('records')
+    if args.workers == 'auto':
+        n_workers = mp.cpu_count()
+    else:
+        n_workers = int(args.workers)
+        
+    with mp.Pool(processes=n_workers) as pool:
+        res = pool.map(multi_work,tasks)
+    
+    df_results = pd.DataFrame(res)
+    df_results = df_results.sort_values('run_id')
+    csv_path = output_dir / "metrics.csv"
+    df_results.to_csv(csv_path, index=False)
+    print(f"test-paralle--Done! {len(df_results)} simulations run.")
+    
+    if args.plot:
+        # Collect raw results for plotting
+        raw_results = []
+        for task in tasks:
+            res = run_simulation(int(task['init_mailly']), int(task['init_moulin']), 
+                               int(task['steps']), task['p1'], task['p2'], int(task['seed']))
+            raw_results.append(res)
+        plot_results(raw_results, output_dir)
+        
 
 
 if __name__ == "__main__":

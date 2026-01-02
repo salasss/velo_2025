@@ -42,8 +42,27 @@ def step(
         - Update the state by moving bikes between stations based on probabilities
         - If a station has no bikes available, increment the appropriate unmet demand counter
     """
-    # TODO: Implement the step logic including unmet tracking
-    pass
+    # User tries to go from mailly -> moulin with prob p1
+    #mailly -> moulin
+    #we will note remove metrics to not touch to the def 
+    randomp1 = rng.random()
+    if randomp1<p1:
+        if(state.mailly):
+            state.mailly-=1
+            state.moulin+=1
+        else:
+            state.unmet_mailly+=1
+            metrics['unmet_mailly']+=1
+    #mailly <- moulin
+    randomp2 = rng.random()
+    if randomp2<p2:
+        if(state.moulin):
+            state.moulin-=1
+            state.mailly+=1
+        else:
+            state.unmet_moulin+=1
+            metrics['unmet_moulin']+=1
+    return state
 
 
 def run_simulation(
@@ -77,5 +96,26 @@ def run_simulation(
         - Record state at each time step for the DataFrame
         - Calculate final imbalance as mailly - moulin
     """
-    # TODO: Implement the simulation loop with extended metrics
-    pass
+    state = State(mailly=initial_mailly,moulin=initial_moulin)
+    rng = np.random.default_rng(seed)
+    metrics = {'unmet_mailly':0,'unmet_moulin':0}
+    mailly = []
+    moulin = []
+    unmet_mailly = []
+    unmet_moulin = []
+    final_imbalance = []
+    for i in range(steps):
+        mailly.append(state.mailly)
+        moulin.append(state.moulin)
+        unmet_mailly.append(state.unmet_mailly)
+        unmet_moulin.append(state.unmet_moulin)
+        final_imbalance.append(state.mailly - state.moulin)
+        step(state,p1,p2,rng,metrics)
+    return {
+    "mailly": mailly,
+    "moulin": moulin,
+    "unmet_mailly": unmet_mailly,
+    "unmet_moulin": unmet_moulin,
+    "final_imbalance": final_imbalance
+    }
+        
