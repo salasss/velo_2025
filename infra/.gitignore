@@ -1,0 +1,28 @@
+# Fichiers Terraform locaux
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+*.tfstate
+*.tfstate.*
+
+# Fichiers de configuration sensibles
+terraform.tfvars
+!terraform.tfvars.example
+
+# Variables locales
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plans Terraform
+*.tfplan
+
+# Cache
+.terraformrc
+terraform.rc
+
+# Variables d'environnement
+.env
+.env.local
